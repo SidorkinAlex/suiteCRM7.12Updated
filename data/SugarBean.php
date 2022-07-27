@@ -4673,7 +4673,7 @@ class SugarBean
                 continue;
             }
             if (isset($row[$field])) {
-                $this->$field = $row[$field];
+                $this->$field = $this->getFieldValueFromDB($field,$row);
                 $owner = $field . '_owner';
                 if (!empty($row[$owner])) {
                     $this->$owner = $row[$owner];
@@ -6247,5 +6247,50 @@ class SugarBean
             $this->fetched_row[$change['field_name']] = $change['after'];
         }
         $this->createdAuditRecords = true;
+    }
+
+    /**
+     * @param $field_name string field name from they getting sql value data
+     * @return string data in set from sql
+     */
+    public function getFieldValue2Save($field_name)
+    {
+        $sf=$this->getFieldClass($field_name);
+        if ($sf != null && method_exists($sf,'formatting2Save') ) {
+            $value = $sf->formatting2Save($this->$field_name);
+        } else {
+            $value=from_html($this->$field_name);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param string $field field name from vardef
+     * @param array $row result sql query
+     * @return mixed value field in Model depending on the type
+     */
+    protected function getFieldValueFromDB(string $field, array $row)
+    {
+        $sf = $this->getFieldClass($field);
+        if ($sf != null && method_exists($sf,'formatting2retrieve') ) {
+            $value = $sf->formatting2retrieve($row,$this->field_defs[$field]);
+        } else {
+            $value=$row[$field];
+        }
+        return $value;
+    }
+
+    /**
+     * @param string $field
+     * @return mixed|null FieldsObjectClass
+     */
+    protected function getFieldClass(string $field)
+    {
+        require_once('include/SugarFields/SugarFieldHandler.php');
+        $sfh = new SugarFieldHandler();
+        $properties = $this->field_defs[$field];
+        $type = !empty($properties['custom_type']) ? $properties['custom_type'] : $properties['type'];
+        return $sfh::getSugarField(ucfirst($type), true);
     }
 }
