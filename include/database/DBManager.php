@@ -528,7 +528,7 @@ abstract class DBManager
      * @param bool $execute Execute or return query?
      * @return bool query result
      */
-    public function insertParams($table, $field_defs, $data, $field_map = null, $execute = true)
+    public function insertParams($table, $field_defs, $data, SugarBean $bean, $field_map = null, $execute = true)
     {
         $values = array();
         if (!is_array($field_defs) && !is_object($field_defs)) {
@@ -544,7 +544,7 @@ abstract class DBManager
 
                 if (isset($data[$field])) {
                     // clean the incoming value..
-                    $val = from_html($data[$field]);
+                    $val = $bean->getFieldValue2Save($field);
                 } else {
                     if (isset($fieldDef['default']) && strlen($fieldDef['default']) > 0) {
                         $val = $fieldDef['default'];
@@ -2021,6 +2021,7 @@ abstract class DBManager
             $bean->getTableName(),
             $bean->getFieldDefinitions(),
             get_object_vars($bean),
+            $bean,
             isset($bean->field_name_map) ? $bean->field_name_map : null,
             false
         );
@@ -2070,7 +2071,7 @@ abstract class DBManager
                 }
 
                 if (isset($bean->$field)) {
-                    $val = from_html($bean->$field);
+                    $val = $bean->getFieldValue2Save($field);
                 } else {
                     continue;
                 }
